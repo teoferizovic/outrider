@@ -1,0 +1,74 @@
+version: '3'
+
+networks:
+  outrider_network:
+
+services:
+  nginx:
+    image: nginx:stable-alpine
+    container_name: outrider-nginx
+    ports:
+      - "9090:80"
+    volumes:
+      - ./src:/var/www/html
+      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf
+    depends_on:
+      - php
+      - mysql
+    networks:
+      - outrider_network
+    environment:
+      - NGINX_HOST=localhost  
+
+  mysql:
+    image: mysql:8.0.23
+    container_name: outrider-mysql
+    restart: unless-stopped
+    tty: true
+    ports:
+      - "7306:3306"
+    environment:
+      MYSQL_RANDOM_ROOT_PASSWORD: "test_pass"
+      MYSQL_DATABASE: "outrider_db"
+      MYSQL_USER: "test_user"
+      MYSQL_PASSWORD: "test_pass"
+    volumes:
+      - ./db/mysql_data:/var/lib/mysql
+    command: --default-authentication-plugin=mysql_native_password    
+    networks:
+      - outrider_network
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin:4.7
+    depends_on:
+      - mysql
+    ports:
+      - "7055:80"
+    environment:
+      - PMA_HOST=mysql
+      - PMA_PORT=3306
+    volumes:
+      - /sessions
+    container_name: outrider-phpmyadmin    
+    networks:
+      - outrider_network
+  php:
+    build:
+      context: ./php
+      dockerfile: Dockerfile
+    container_name: outrider-php
+    volumes:
+      - ./src:/var/www/html
+    ports:
+      - "5000:9000"
+    networks:
+      - outrider_network
+  redis:
+    image: redis
+    container_name: outrider-redis
+    ports:
+      - 9992:6379
+    volumes:
+      - ./db/redis_data:/data  
+    networks:
+      - outrider_network         
+     
