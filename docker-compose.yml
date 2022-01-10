@@ -71,4 +71,33 @@ services:
       - ./db/redis_data:/data  
     networks:
       - outrider_network         
-     
+  composer:
+    image: composer:latest
+    container_name: outrider-composer
+    volumes:
+      - ./src:/var/www/html
+    working_dir: /var/www/html
+    depends_on:
+      - php
+    networks:
+      - outrider_network
+  artisan:
+    build:
+      context: ./php
+      dockerfile: Dockerfile
+    container_name: outrider-artisan
+    volumes:
+      - ./src:/var/www/html
+    depends_on:
+      - mysql
+    working_dir: /var/www/html
+    entrypoint: ['/var/www/html/artisan']
+    networks:
+      - outrider_network
+  npm:
+    image: node:13.7
+    container_name: outrider-npm
+    volumes:
+      - ./src:/var/www/html
+    working_dir: /var/www/html
+    entrypoint: ['npm']            
